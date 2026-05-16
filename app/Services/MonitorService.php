@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Monitor;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 
 class MonitorService
 {
@@ -36,5 +37,17 @@ class MonitorService
         return $monitor->histories()
             ->orderByDesc('checked_at')
             ->paginate(perPage: $perPage, page: $page);
+    }
+
+    public function isDueForCheck(Monitor $monitor, ?Carbon $now = null): bool
+    {
+        $now ??= Carbon::now();
+        $baseline = $monitor->last_checked_at ?? $monitor->created_at;
+
+        if (! $baseline instanceof Carbon) {
+            return true;
+        }
+
+        return $baseline->diffInMinutes($now) >= $monitor->check_interval;
     }
 }

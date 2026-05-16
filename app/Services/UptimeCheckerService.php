@@ -11,6 +11,10 @@ use Throwable;
 
 class UptimeCheckerService
 {
+    public function __construct(private readonly MonitorNotificationService $notifications)
+    {
+    }
+
     public function check(Monitor $monitor): MonitorHistory
     {
         $checkedAt = Carbon::now();
@@ -32,7 +36,7 @@ class UptimeCheckerService
             );
         }
 
-        $this->updateMonitorMetrics($monitor, $checkedAt);
+        $this->updateMonitorAfterCheck($monitor, $history, $checkedAt);
 
         return $history;
     }
@@ -70,12 +74,55 @@ class UptimeCheckerService
         ]);
     }
 
-    protected function updateMonitorMetrics(Monitor $monitor, Carbon $checkedAt): void
+    protected function updateMonitorAfterCheck(Monitor $monitor, MonitorHistory $history, Carbon $checkedAt): void
     {
+        $previousStatus = $monitor->status;
+        $nextStatus = $this->determineNextStatus($monitor, $history);
+
         $monitor->forceFill([
+            'status' => $nextStatus,
             'last_checked_at' => $checkedAt,
             'uptime_percentage' => $this->calculateUptimePercentage($monitor),
         ])->save();
+
+        $this->notifications->sendStatusTransitionNotification(
+            monitor: $monitor,
+            previousStatus: $previousStatus,
+            currentStatus: $nextStatus,
+        );
+    }
+
+    protected function determineNextStatus(Monitor $monitor, MonitorHistory $history): string
+    {
+        if ($history->is_up) {
+            return 'up';
+        }
+
+        if ($this->consecutiveFailures($monitor) >= $monitor->threshold) {
+            return 'down';
+        }
+
+        return $monitor->status;
+    }
+
+    protected function consecutiveFailures(Monitor $monitor): int
+    {
+        $recentChecks = $monitor->histories()
+            ->latest('checked_at')
+            ->limit($monitor->threshold)
+            ->get(['is_up']);
+
+        $failures = 0;
+
+        foreach ($recentChecks as $check) {
+            if ($check->is_up) {
+                break;
+            }
+
+            $failures++;
+        }
+
+        return $failures;
     }
 
     public function calculateUptimePercentage(Monitor $monitor): float
