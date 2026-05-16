@@ -1,0 +1,114 @@
+{
+  "info": {
+    "_postman_id": "4cfccf88-0483-4a7d-9b6c-b875a8336f77",
+    "name": "Uptime Monitor API",
+    "description": "Laravel Uptime Monitor API collection with monitor creation, listing, and history endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "environment_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create Monitor",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://example.com\",\n  \"check_interval\": 5,\n  \"threshold\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{environment_url}}/api/monitors",
+          "host": [
+            "{{environment_url}}"
+          ],
+          "path": [
+            "api",
+            "monitors"
+          ]
+        },
+        "description": "Create a new uptime monitor. Returns HTTP 210 on success."
+      },
+      "response": []
+    },
+    {
+      "name": "List Monitors",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{environment_url}}/api/monitors",
+          "host": [
+            "{{environment_url}}"
+          ],
+          "path": [
+            "api",
+            "monitors"
+          ]
+        },
+        "description": "Return all uptime monitors."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Monitor History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{environment_url}}/api/monitors/1/history?page=1&per_page=15",
+          "host": [
+            "{{environment_url}}"
+          ],
+          "path": [
+            "api",
+            "monitors",
+            "1",
+            "history"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "per_page",
+              "value": "15"
+            }
+          ]
+        },
+        "description": "Return paginated monitor check history ordered by checked_at descending."
+      },
+      "response": []
+    }
+  ]
+}
